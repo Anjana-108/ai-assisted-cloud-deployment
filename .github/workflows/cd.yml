@@ -1,0 +1,18 @@
+name: CD - Deploy Application
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t ai-assisted-cloud-deployment:deploy .
+
+      - name: Deployment preparation
+        run: echo "Docker image ready for AWS deployment"
