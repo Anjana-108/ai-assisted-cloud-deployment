@@ -1,0 +1,29 @@
+name: CI - Build Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t ai-assisted-cloud-deployment:ci .
+
+      - name: Run container
+        run: |
+          docker run -d -p 5000:5000 --name ai-cloud-ci ai-assisted-cloud-deployment:ci
+          sleep 5
+
+      - name: Test health endpoint
+        run: |
+          curl --fail http://localhost:5000/health
