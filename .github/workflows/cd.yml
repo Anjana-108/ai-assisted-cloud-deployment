@@ -23,7 +23,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ai-assisted-cloud-deployment:latest .
+          docker buildx build \
+            --platform linux/arm64 \
+            -t ai-assisted-cloud-deployment:latest \
+            --load .
 
       - name: Login to Amazon ECR
         run: |
