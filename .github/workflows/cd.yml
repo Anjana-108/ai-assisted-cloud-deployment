@@ -3,6 +3,10 @@ name: CD - Deploy Application
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -11,8 +15,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Build Docker image
-        run: docker build -t ai-assisted-cloud-deployment:deploy .
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::243772031845:role/ai-cloud-github-actions-role
+          aws-region: ap-south-1
 
-      - name: Deployment preparation
-        run: echo "Docker image ready for AWS deployment"
+      - name: Build Docker image
+        run: |
+          docker build -t ai-assisted-cloud-deployment:latest .
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-south-1 | \
+          docker login --username AWS --password-stdin \
+          243772031845.dkr.ecr.ap-south-1.amazonaws.com
+
+      - name: Tag Docker image
+        run: |
+          docker tag ai-assisted-cloud-deployment:latest \
+          243772031845.dkr.ecr.ap-south-1.amazonaws.com/ai-assisted-cloud-deployment:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push \
+          243772031845.dkr.ecr.ap-south-1.amazonaws.com/ai-assisted-cloud-deployment:latest
+
+      - name: Deploy to EC2
+        run: |
+          aws ssm send-command \
+            --region ap-south-1 \
+            --instance-ids i-06e4612f00a73faf3 \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "sudo docker login --username AWS --password-stdin 243772031845.dkr.ecr.ap-south-1.amazonaws.com <<< $(aws ecr get-login-password --region ap-south-1)",
+              "sudo docker pull 243772031845.dkr.ecr.ap-south-1.amazonaws.com/ai-assisted-cloud-deployment:latest",
+              "sudo docker stop ai-cloud-app || true",
+              "sudo docker rm ai-cloud-app || true",
+              "sudo docker run -d -p 5000:5000 --name ai-cloud-app 243772031845.dkr.ecr.ap-south-1.amazonaws.com/ai-assisted-cloud-deployment:latest"
+            ]'
