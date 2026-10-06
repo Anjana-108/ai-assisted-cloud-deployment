@@ -1,6 +1,6 @@
-# AI-Assisted Cloud Deployment — Flask on AWS with CI/CD and Terraform
+# AI-Assisted Production Cloud Deployment Platform
 
-A containerized Flask service deployed to AWS EC2 through a GitHub Actions pipeline. Infrastructure is defined in Terraform, and the pipeline authenticates to AWS with **OIDC**, with no stored access keys.
+Containerized Flask application deployed on AWS using Docker, Terraform, GitHub Actions CI/CD, and secure OIDC-based authentication.
 
 ## How it works
 
